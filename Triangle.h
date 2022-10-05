@@ -29,4 +29,9 @@ class Triangle {
 
 		// Rendering the triangle using CPU
 		void RenderCPU();
+
+		// Getters and setters
+		glm::vec3* getVertColors() { return &c[0]; }
+		//void setColorArray(glm::vec3* nc[3]) { c = nc; }
+		void setVertColor(glm::vec3* vc, int i) { c[i] = *vc; }
 };

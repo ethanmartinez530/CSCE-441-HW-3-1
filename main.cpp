@@ -80,6 +80,26 @@ void Display()
 	glFlush();
 }
 
+void colorTriangles() {
+	switch (colorMode) {
+	case 0:
+		break;
+	case 1:
+		for (int i = 0; i < triangleVector.size(); i++) {
+			for (int j = 0; j < 2; j++) {
+				glm::vec3 vc;
+				vc.x = float(rand()) / float(RAND_MAX);
+				vc.y = float(rand()) / float(RAND_MAX);
+				vc.z = float(rand()) / float(RAND_MAX);
+				triangleVector[i].setVertColor(&vc, j);
+			}
+		}
+		break;
+	case 2:
+		break;
+	}
+}
+
 // Keyboard character callback function
 void CharacterCallback(GLFWwindow* lWindow, unsigned int key)
 {
@@ -90,6 +110,7 @@ void CharacterCallback(GLFWwindow* lWindow, unsigned int key)
 		break;
 	case '1':
 		colorMode = 1;
+		colorTriangles();
 		break;
 	case '2':
 		colorMode = 2;
@@ -290,6 +311,7 @@ std::string WindowTitle(std::string mainName)
 
 void Init()
 {
+	srand(time(NULL));
 	glfwInit();
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WindowTitle(mainName).c_str(), NULL, NULL);

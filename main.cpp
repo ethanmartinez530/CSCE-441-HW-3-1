@@ -94,13 +94,13 @@ void colorTriangles() {
 			vc.x = float(rand()) / float(RAND_MAX);
 			vc.y = float(rand()) / float(RAND_MAX);
 			vc.z = float(rand()) / float(RAND_MAX);
-			for (int j = 0; j < 2; j++) { triangleVector[i].setVertColor(&vc, j); }
+			for (int j = 0; j < 3; j++) { triangleVector[i].setVertColor(&vc, j); }
 		}
 		break;
 
 	case 1:
 		for (int i = 0; i < triangleVector.size(); i++) {
-			for (int j = 0; j < 2; j++) {
+			for (int j = 0; j < 3; j++) {
 				glm::vec3 vc;
 				vc.x = float(rand()) / float(RAND_MAX);
 				vc.y = float(rand()) / float(RAND_MAX);
@@ -111,7 +111,9 @@ void colorTriangles() {
 		break;
 
 	case 2:
-
+		for (int i = 0; i < triangleVector.size(); i++) {
+			
+		}
 		break;
 	}
 }

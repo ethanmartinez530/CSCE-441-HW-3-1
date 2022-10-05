@@ -80,10 +80,24 @@ void Display()
 	glFlush();
 }
 
+/*
+	Color triangles when color mode is changed
+	Mode 0: randomly color each triangle
+	Mode 1: randomly color each vertex
+	Mode 2: color each vertex according to its z value
+*/
 void colorTriangles() {
 	switch (colorMode) {
 	case 0:
+		for (int i = 0; i < triangleVector.size(); i++) {
+			glm::vec3 vc;
+			vc.x = float(rand()) / float(RAND_MAX);
+			vc.y = float(rand()) / float(RAND_MAX);
+			vc.z = float(rand()) / float(RAND_MAX);
+			for (int j = 0; j < 2; j++) { triangleVector[i].setVertColor(&vc, j); }
+		}
 		break;
+
 	case 1:
 		for (int i = 0; i < triangleVector.size(); i++) {
 			for (int j = 0; j < 2; j++) {
@@ -95,7 +109,9 @@ void colorTriangles() {
 			}
 		}
 		break;
+
 	case 2:
+
 		break;
 	}
 }
@@ -107,6 +123,7 @@ void CharacterCallback(GLFWwindow* lWindow, unsigned int key)
 	{
 	case '0':
 		colorMode = 0;
+		colorTriangles();
 		break;
 	case '1':
 		colorMode = 1;
@@ -114,6 +131,7 @@ void CharacterCallback(GLFWwindow* lWindow, unsigned int key)
 		break;
 	case '2':
 		colorMode = 2;
+		colorTriangles();
 		break;
 	case 'w':
 		eyeDistance *= (1 - 0.05);

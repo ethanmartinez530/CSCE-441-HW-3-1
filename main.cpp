@@ -111,8 +111,24 @@ void colorTriangles() {
 		break;
 
 	case 2:
+		float maxZ = triangleVector[0].getVertPos(0)->z;
+		float minZ = triangleVector[0].getVertPos(0)->z;
 		for (int i = 0; i < triangleVector.size(); i++) {
-			
+			for (int j = 0; j < 3; j++) {
+				float currZ = triangleVector[i].getVertPos(j)->z;
+				if (currZ > maxZ) { maxZ = currZ; }
+				if (currZ < minZ) { minZ = currZ; }
+			}
+		}
+
+		for (int i = 0; i < triangleVector.size(); i++) {
+			for (int j = 0; j < 3; j++) {
+				glm::vec3 vc;
+				vc.x = 0;
+				vc.y = (triangleVector[i].getVertPos(j)->z - minZ) / (maxZ - minZ);
+				vc.z = 0;
+				triangleVector[i].setVertColor(&vc, j);
+			}
 		}
 		break;
 	}

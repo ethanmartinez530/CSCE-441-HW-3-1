@@ -31,7 +31,7 @@ class Triangle {
 		void RenderCPU();
 
 		// Getters and setters
-		glm::vec3* getVertColors() { return &c[0]; }
-		//void setColorArray(glm::vec3* nc[3]) { c = nc; }
+		glm::vec3* getVertPos(int i) { return &v[i]; }
+		glm::vec3* getVertColors(int i) { return &c[i]; }
 		void setVertColor(glm::vec3* vc, int i) { c[i] = *vc; }
 };

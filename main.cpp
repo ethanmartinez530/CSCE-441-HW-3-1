@@ -29,6 +29,7 @@ bool rButtonPressed;
 
 float color[WINDOW_HEIGHT][WINDOW_WIDTH][3];
 float depth[WINDOW_HEIGHT][WINDOW_WIDTH];
+float maxZ, minZ;
 
 
 std::vector<Triangle> triangleVector;
@@ -70,6 +71,12 @@ void Display()
 	}
 	else
 	{
+		for (int i = 0; i < WINDOW_HEIGHT; i++) {
+			for (int j = 0; j < WINDOW_WIDTH; j++) {
+				depth[i][j] = minZ;
+			}
+		}
+		
 		for (int i = 0; i < triangleVector.size(); i++)
 			triangleVector[i].RenderCPU(modelViewMatrix, projectionMatrix, color, depth, WINDOW_HEIGHT, WINDOW_WIDTH);
 
@@ -87,6 +94,16 @@ void Display()
 	Mode 2: color each vertex according to its z value
 */
 void colorTriangles() {
+	maxZ = triangleVector[0].getVertPos(0)->z;
+	minZ = triangleVector[0].getVertPos(0)->z;
+	for (int i = 0; i < triangleVector.size(); i++) {
+		for (int j = 0; j < 3; j++) {
+			float currZ = triangleVector[i].getVertPos(j)->z;
+			if (currZ > maxZ) { maxZ = currZ; }
+			if (currZ < minZ) { minZ = currZ; }
+		}
+	}
+	
 	switch (colorMode) {
 	case 0:
 		for (int i = 0; i < triangleVector.size(); i++) {
@@ -111,16 +128,6 @@ void colorTriangles() {
 		break;
 
 	case 2:
-		float maxZ = triangleVector[0].getVertPos(0)->z;
-		float minZ = triangleVector[0].getVertPos(0)->z;
-		for (int i = 0; i < triangleVector.size(); i++) {
-			for (int j = 0; j < 3; j++) {
-				float currZ = triangleVector[i].getVertPos(j)->z;
-				if (currZ > maxZ) { maxZ = currZ; }
-				if (currZ < minZ) { minZ = currZ; }
-			}
-		}
-
 		for (int i = 0; i < triangleVector.size(); i++) {
 			for (int j = 0; j < 3; j++) {
 				glm::vec3 vc;

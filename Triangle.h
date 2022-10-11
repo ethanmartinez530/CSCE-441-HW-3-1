@@ -31,8 +31,6 @@ class Triangle {
 		template <int rows, int cols, int colors>
 		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w)
 		{
-			//std::cout << "Begin RenderCPU\n";
-			
 			// Convert verticies to NDC then to screen space
 			glm::vec4 hCoords[3];
 			glm::vec4 ndc[3];
@@ -50,8 +48,8 @@ class Triangle {
 				ndc[i] /= ndc[i].w;
 				screenCoords[i] = viewport * ndc[i];
 			}
-
-			// Rasterize
+			
+			// Find bounding box
 			glm::vec2 max = { screenCoords[0].x, screenCoords[0].y };
 			glm::vec2 min = { screenCoords[0].x, screenCoords[0].y };
 			for (int i = 0; i < 3; i++) {
@@ -60,21 +58,25 @@ class Triangle {
 				if (screenCoords[i].x < min.x) { min.x = screenCoords[i].x; }
 				if (screenCoords[i].y < min.y) { min.y = screenCoords[i].y; }
 			}
-			//std::cout << "Max: " << max.x << ", " << max.y << std::endl;
-			//std::cout << "Min: " << min.x << ", " << min.y << std::endl;
 
+			// Rasterize and color
 			for (int y = min.y; y <= max.y; y++) {
 				for (int x = min.x; x <= max.x; x++) {
-					//std::cout << x << ", " << y << std::endl;
 					float alpha = (-(x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x)) / (-(screenCoords[0].x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (screenCoords[0].y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x));
 					float beta = (-(x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x)) / (-(screenCoords[1].x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (screenCoords[1].y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x));
 					float gamma = 1 - alpha - beta;
 
 					if ((0 <= alpha <= 1) && (0 <= beta <= 1) && (alpha + beta <= 1)) {
+						glm::vec3 point = alpha * v[0] + beta * v[1] + gamma * v[2];
 						glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
-						cBuffer[y][x][0] = pointColor.x;
-						cBuffer[y][x][1] = pointColor.y;
-						cBuffer[y][x][2] = pointColor.z;
+						
+						if (point.z > zBuffer[y][x] && (0 <= x && x < w) && (0 <= y && y < h)) {
+							//if (x < 0 || y < 0) std::cout << x << ", " << y << std::endl;
+							cBuffer[y][x][0] = pointColor.x;
+							cBuffer[y][x][1] = pointColor.y;
+							cBuffer[y][x][2] = pointColor.z;
+							zBuffer[y][x] = point.z;
+						}
 					}
 				}
 			}

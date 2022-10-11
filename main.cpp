@@ -172,6 +172,8 @@ void CharacterCallback(GLFWwindow* lWindow, unsigned int key)
 		break;
 	case ' ':
 		isOpenGL = !isOpenGL;
+		if (isOpenGL) { std::cout << "OpenGL Rendering\n"; }
+		else { std::cout << "CPU Rendering\n"; }
 		break;
 	case 't':
 	{

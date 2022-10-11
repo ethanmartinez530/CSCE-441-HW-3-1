@@ -66,12 +66,13 @@ class Triangle {
 					float beta = (-(x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x)) / (-(screenCoords[1].x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (screenCoords[1].y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x));
 					float gamma = 1 - alpha - beta;
 
-					if ((0 <= alpha <= 1) && (0 <= beta <= 1) && (alpha + beta <= 1)) {
+					// Check inside triangle
+					if ((0 <= alpha && alpha <= 1) && (0 <= beta && beta <= 1) && (alpha + beta <= 1)) {
 						glm::vec3 point = alpha * v[0] + beta * v[1] + gamma * v[2];
 						glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
 						
+						// Check depth buffer
 						if (point.z > zBuffer[y][x] && (0 <= x && x < w) && (0 <= y && y < h)) {
-							//if (x < 0 || y < 0) std::cout << x << ", " << y << std::endl;
 							cBuffer[y][x][0] = pointColor.x;
 							cBuffer[y][x][1] = pointColor.y;
 							cBuffer[y][x][2] = pointColor.z;
@@ -80,8 +81,6 @@ class Triangle {
 					}
 				}
 			}
-			
-			//std::cout << "End RenderCPU\n";
 		}
 
 		// Getters and setters

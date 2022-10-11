@@ -109,7 +109,3 @@ void Triangle::RenderOpenGL(glm::mat4 &modelViewMatrix, glm::mat4 &projectionMat
 
 
 // Render the triangle on CPU
-void Triangle::RenderCPU()
-{
-
-}

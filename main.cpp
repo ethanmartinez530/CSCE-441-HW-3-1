@@ -71,7 +71,7 @@ void Display()
 	else
 	{
 		for (int i = 0; i < triangleVector.size(); i++)
-			triangleVector[i].RenderCPU();
+			triangleVector[i].RenderCPU(modelViewMatrix, projectionMatrix, color, depth, WINDOW_HEIGHT, WINDOW_WIDTH);
 
 		glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB, GL_FLOAT, &color[0][0][0]);
 		ClearFrameBuffer();

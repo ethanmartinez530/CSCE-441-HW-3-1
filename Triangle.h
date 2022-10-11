@@ -28,7 +28,58 @@ class Triangle {
 		void RenderOpenGL(glm::mat4 &modelViewMatrix, glm::mat4 &projectionMatrix, bool textureMode);
 
 		// Rendering the triangle using CPU
-		void RenderCPU();
+		template <int rows, int cols, int colors>
+		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w)
+		{
+			//std::cout << "Begin RenderCPU\n";
+			
+			// Convert verticies to NDC then to screen space
+			glm::vec4 hCoords[3];
+			glm::vec4 ndc[3];
+			glm::vec4 screenCoords[3];
+			glm::mat4 viewport;
+			viewport[0][0] = w / 2;
+			viewport[0][3] = w / 2;
+			viewport[1][1] = h / 2;
+			viewport[1][3] = h / 2;
+			for (int i = 0; i < 3; i++) {
+				hCoords[i] = { v[i].x, v[i].y, v[i].z, 1 };
+
+				ndc[i] = (projectionMatrix * modelViewMatrix * hCoords[i]);
+				ndc[i] /= ndc->w;
+				screenCoords[i] = viewport * projectionMatrix * modelViewMatrix * hCoords[i];
+			}
+
+			// Rasterize
+			glm::vec2 max = { screenCoords[0].x, screenCoords[0].y };
+			glm::vec2 min = { screenCoords[0].x, screenCoords[0].y };
+			for (int i = 0; i < 3; i++) {
+				if (screenCoords[i].x > max.x) { max.x = screenCoords[i].x; }
+				if (screenCoords[i].y > max.y) { max.y = screenCoords[i].y; }
+				if (screenCoords[i].x < min.x) { min.x = screenCoords[i].x; }
+				if (screenCoords[i].y < min.y) { min.y = screenCoords[i].y; }
+			}
+			std::cout << "Max: " << max.x << ", " << max.y << std::endl;
+			std::cout << "Min: " << min.x << ", " << min.y << std::endl;
+
+			for (int y = min.y; y <= max.y; y++) {
+				for (int x = min.x; x <= max.x; x++) {
+					std::cout << x << ", " << y << std::endl;
+					float alpha = (-(x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x)) / (-(screenCoords[0].x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (screenCoords[0].y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x));
+					float beta = (-(x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x)) / (-(screenCoords[1].x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (screenCoords[1].y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x));
+					float gamma = 1 - alpha - beta;
+
+					if ((0 <= alpha <= 1) && (0 <= beta <= 1) && (alpha + beta <= 1)) {
+						glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
+						cBuffer[y][x][0] = pointColor.x;
+						cBuffer[y][x][1] = pointColor.y;
+						cBuffer[y][x][2] = pointColor.z;
+					}
+				}
+			}
+			
+			//std::cout << "End RenderCPU\n";
+		}
 
 		// Getters and setters
 		glm::vec3* getVertPos(int i) { return &v[i]; }

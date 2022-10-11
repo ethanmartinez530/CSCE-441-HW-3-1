@@ -58,6 +58,10 @@ class Triangle {
 				if (screenCoords[i].x < min.x) { min.x = screenCoords[i].x; }
 				if (screenCoords[i].y < min.y) { min.y = screenCoords[i].y; }
 			}
+			if (max.x > w) { max.x = w; }
+			if (min.x < 0) { min.x = 0; }
+			if (max.y > h) { max.y = h; }
+			if (min.y < 0) { min.y = 0; }
 
 			// Rasterize and color
 			for (int y = min.y; y <= max.y; y++) {

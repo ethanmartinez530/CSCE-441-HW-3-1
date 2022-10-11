@@ -231,7 +231,7 @@ void CreateTriangleVector(std::vector<glm::vec3> &vertices, std::vector<glm::vec
 }
 
 // Load the geometry and texture coordinates if available
-void LoadModel(char* name, std::vector<glm::vec3> &vertices, std::vector<glm::vec2>& texCoords)
+void LoadModel(const char* name, std::vector<glm::vec3> &vertices, std::vector<glm::vec2>& texCoords)
 {
 	// Taken from Shinjiro Sueda with slight modification
 	std::string meshName(name);
@@ -370,9 +370,13 @@ void Init()
 
 	ClearFrameBuffer();
 
+	std::string modelName;
+	std::cout << "Input model file name: ";
+	std::cin >> modelName;
+	modelName = "../resources/" + modelName;
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> texCoords;
-	LoadModel("../resources/bunny.obj", vertices, texCoords);
+	LoadModel(modelName.c_str(), vertices, texCoords);
 	
 	if (!texCoords.empty())
 	{

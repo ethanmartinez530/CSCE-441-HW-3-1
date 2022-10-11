@@ -37,17 +37,18 @@ class Triangle {
 			glm::vec4 hCoords[3];
 			glm::vec4 ndc[3];
 			glm::vec4 screenCoords[3];
-			glm::mat4 viewport;
+			glm::mat4 viewport(0.0f);
 			viewport[0][0] = w / 2;
-			viewport[0][3] = w / 2;
 			viewport[1][1] = h / 2;
-			viewport[1][3] = h / 2;
+			viewport[2][2] = 1;
+			viewport[3][0] = w / 2;
+			viewport[3][1] = h / 2;
+			viewport[3][3] = 1;
 			for (int i = 0; i < 3; i++) {
 				hCoords[i] = { v[i].x, v[i].y, v[i].z, 1 };
-
 				ndc[i] = (projectionMatrix * modelViewMatrix * hCoords[i]);
-				ndc[i] /= ndc->w;
-				screenCoords[i] = viewport * projectionMatrix * modelViewMatrix * hCoords[i];
+				ndc[i] /= ndc[i].w;
+				screenCoords[i] = viewport * ndc[i];
 			}
 
 			// Rasterize
@@ -59,12 +60,12 @@ class Triangle {
 				if (screenCoords[i].x < min.x) { min.x = screenCoords[i].x; }
 				if (screenCoords[i].y < min.y) { min.y = screenCoords[i].y; }
 			}
-			std::cout << "Max: " << max.x << ", " << max.y << std::endl;
-			std::cout << "Min: " << min.x << ", " << min.y << std::endl;
+			//std::cout << "Max: " << max.x << ", " << max.y << std::endl;
+			//std::cout << "Min: " << min.x << ", " << min.y << std::endl;
 
 			for (int y = min.y; y <= max.y; y++) {
 				for (int x = min.x; x <= max.x; x++) {
-					std::cout << x << ", " << y << std::endl;
+					//std::cout << x << ", " << y << std::endl;
 					float alpha = (-(x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x)) / (-(screenCoords[0].x - screenCoords[1].x) * (screenCoords[2].y - screenCoords[1].y) + (screenCoords[0].y - screenCoords[1].y) * (screenCoords[2].x - screenCoords[1].x));
 					float beta = (-(x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x)) / (-(screenCoords[1].x - screenCoords[2].x) * (screenCoords[0].y - screenCoords[2].y) + (screenCoords[1].y - screenCoords[2].y) * (screenCoords[0].x - screenCoords[2].x));
 					float gamma = 1 - alpha - beta;

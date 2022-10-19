@@ -29,7 +29,7 @@ class Triangle {
 
 		// Rendering the triangle using CPU
 		template <int rows, int cols, int colors>
-		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w)
+		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w, bool isTextured, std::vector<float*> texture, int tw, int th)
 		{
 			// Convert verticies to NDC then to screen space
 			glm::vec4 hCoords[3];
@@ -72,14 +72,27 @@ class Triangle {
 
 					// Check inside triangle
 					if ((0 <= alpha && alpha <= 1) && (0 <= beta && beta <= 1) && (alpha + beta <= 1)) {
-						glm::vec3 point = alpha * v[0] + beta * v[1] + gamma * v[2];
+						glm::vec3 point = alpha * screenCoords[0] + beta * screenCoords[1] + gamma * screenCoords[2];
 						glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
+						glm::vec2 textureCoords = alpha * t[0] + beta * t[1] + gamma * t[2];
+
+						textureCoords.x = tw * map(textureCoords.x);
+						textureCoords.y = th * map(textureCoords.y);
 						
 						// Check depth buffer
-						if (point.z > zBuffer[y][x] && (0 <= x && x < w) && (0 <= y && y < h)) {
-							cBuffer[y][x][0] = pointColor.x;
-							cBuffer[y][x][1] = pointColor.y;
-							cBuffer[y][x][2] = pointColor.z;
+						if ((point.z < zBuffer[y][x]) && (0 <= x && x < w) && (0 <= y && y < h)) {
+							if (!isTextured) {
+								cBuffer[y][x][0] = pointColor.x;
+								cBuffer[y][x][1] = pointColor.y;
+								cBuffer[y][x][2] = pointColor.z;
+							}
+							else {
+								int ind = 3 * (floor(textureCoords.x) + floor(textureCoords.y) * tw);
+								cBuffer[y][x][0] = texture[0][ind];
+								cBuffer[y][x][1] = texture[0][ind + 1];
+								cBuffer[y][x][2] = texture[0][ind + 2];
+							}
+							
 							zBuffer[y][x] = point.z;
 						}
 					}
@@ -91,4 +104,11 @@ class Triangle {
 		glm::vec3* getVertPos(int i) { return &v[i]; }
 		glm::vec3* getVertColors(int i) { return &c[i]; }
 		void setVertColor(glm::vec3* vc, int i) { c[i] = *vc; }
+
+		// Map texture coordinates to [0, 1]
+		float map(float coord) {
+			while (coord < 0) { coord++; }
+			while (coord > 1) { coord--; }
+			return coord;
+		}
 };

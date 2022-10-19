@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -73,12 +74,12 @@ void Display()
 	{
 		for (int i = 0; i < WINDOW_HEIGHT; i++) {
 			for (int j = 0; j < WINDOW_WIDTH; j++) {
-				depth[i][j] = minZ;
+				depth[i][j] = std::numeric_limits<double>::infinity();
 			}
 		}
 		
 		for (int i = 0; i < triangleVector.size(); i++)
-			triangleVector[i].RenderCPU(modelViewMatrix, projectionMatrix, color, depth, WINDOW_HEIGHT, WINDOW_WIDTH);
+			triangleVector[i].RenderCPU(modelViewMatrix, projectionMatrix, color, depth, WINDOW_HEIGHT, WINDOW_WIDTH, isTextured, texture, texWidth, texHeight);
 
 		glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB, GL_FLOAT, &color[0][0][0]);
 		ClearFrameBuffer();

@@ -29,7 +29,7 @@ class Triangle {
 
 		// Rendering the triangle using CPU
 		template <int rows, int cols, int colors>
-		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w, bool isTextured, std::vector<float*> texture, int tw, int th)
+		void RenderCPU(glm::mat4& modelViewMatrix, glm::mat4& projectionMatrix, float(&cBuffer)[rows][cols][colors], float(&zBuffer)[rows][cols], int h, int w, bool isTextured, int textureMode, std::vector<float*> texture, int tw, int th)
 		{
 			// Convert verticies to NDC then to screen space
 			glm::vec4 hCoords[3];
@@ -86,11 +86,28 @@ class Triangle {
 								cBuffer[y][x][1] = pointColor.y;
 								cBuffer[y][x][2] = pointColor.z;
 							}
-							else {
-								int ind = 3 * (floor(textureCoords.x) + floor(textureCoords.y) * tw);
-								cBuffer[y][x][0] = texture[0][ind];
-								cBuffer[y][x][1] = texture[0][ind + 1];
-								cBuffer[y][x][2] = texture[0][ind + 2];
+							else if (textureMode == 0) {
+								glm::vec3 texColors = getTexColor(textureCoords.x, textureCoords.y, tw, texture);
+								cBuffer[y][x][0] = texColors.x;
+								cBuffer[y][x][1] = texColors.y;
+								cBuffer[y][x][2] = texColors.z;
+							}
+							else if (textureMode == 1) {
+								glm::vec3 u00 = getTexColor(floor(textureCoords.x), floor(textureCoords.y), tw, texture);
+								glm::vec3 u01 = getTexColor(floor(textureCoords.x), ceil(textureCoords.y), tw, texture);
+								glm::vec3 u10 = getTexColor(ceil(textureCoords.x), floor(textureCoords.y), tw, texture);
+								glm::vec3 u11 = getTexColor(ceil(textureCoords.x), ceil(textureCoords.y), tw, texture);
+
+								glm::vec3 u0 = lerp(textureCoords.x - floor(textureCoords.x), u00, u10);
+								glm::vec3 u1 = lerp(textureCoords.x - floor(textureCoords.x), u01, u11);
+								glm::vec3 u = lerp(textureCoords.y - floor(textureCoords.y), u0, u1);
+
+								cBuffer[y][x][0] = u.x;
+								cBuffer[y][x][1] = u.y;
+								cBuffer[y][x][2] = u.z;
+							}
+							else if (textureMode == 2) {
+
 							}
 							
 							zBuffer[y][x] = point.z;
@@ -111,4 +128,16 @@ class Triangle {
 			while (coord > 1) { coord--; }
 			return coord;
 		}
+
+		glm::vec3 getTexColor(float x, float y, float tw, std::vector<float*> texture) {
+			glm::vec3 ret;
+			int ind = 3 * (floor(x) + floor(y) * tw);
+			ret.x = texture[0][ind];
+			ret.y = texture[0][ind+1];
+			ret.z = texture[0][ind+2];
+			return ret;
+		}
+
+		// Linear interpolation
+		glm::vec3 lerp(float x, glm::vec3 v0, glm::vec3 v1) {return v0 + x * (v1 - v0);}
 };

@@ -34,9 +34,10 @@ public:
 		// Convert verticies to NDC then to screen space
 		glm::vec4 hCoords[3];
 		glm::vec4 ndc[3];
-		glm::vec3 zInv;	// Perspective correct interpolation
-		glm::vec2 Qsca[3];
-		glm::vec4 screenCoords[3];
+		float zInv[4];	// Perspective correct interpolation
+		glm::vec2 Qsca[4];
+		glm::vec4 screenCoords[3];	// Vertex coords in screenspace
+
 		glm::mat4 viewport(0.0f);
 		viewport[0][0] = w / 2;
 		viewport[1][1] = h / 2;
@@ -44,6 +45,7 @@ public:
 		viewport[3][0] = w / 2;
 		viewport[3][1] = h / 2;
 		viewport[3][3] = 1;
+
 		for (int i = 0; i < 3; i++) {
 			hCoords[i] = { v[i].x, v[i].y, v[i].z, 1 };
 			ndc[i] = (projectionMatrix * modelViewMatrix * hCoords[i]);
@@ -79,10 +81,13 @@ public:
 				if ((0 <= alpha && alpha <= 1) && (0 <= beta && beta <= 1) && (alpha + beta <= 1)) {
 					glm::vec3 point = alpha * screenCoords[0] + beta * screenCoords[1] + gamma * screenCoords[2];
 					glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
-					glm::vec2 textureCoords = alpha * t[0] + beta * t[1] + gamma * t[2];
+					glm::vec2 textureCoords = perspectiveInterpolation(glm::vec2{ x, y }, screenCoords, zInv, Qsca);
+					//glm::vec2 textureCoords = alpha * t[0] + beta * t[1] + gamma * t[2];
 
-					textureCoords.x = tw * map(textureCoords.x);
-					textureCoords.y = th * map(textureCoords.y);
+					//textureCoords.x = tw * map(textureCoords.x, 1);
+					//textureCoords.y = th * map(textureCoords.y, 1);
+					textureCoords.x = wrap(textureCoords.x * tw, tw);
+					textureCoords.y = wrap(textureCoords.y * th, th);
 
 					// Check depth buffer
 					if ((point.z < zBuffer[y][x]) && (0 <= x && x < w) && (0 <= y && y < h)) {
@@ -94,7 +99,7 @@ public:
 						}
 						// Nearest neighbor
 						else if (textureMode == 0) {
-							buff = getTexColor(textureCoords.x, textureCoords.y, tw, texture, 0);
+							buff = getTexColor(floor(textureCoords.x), floor(textureCoords.y), tw, texture, 0);
 						}
 						// Bilinear Interpolation
 						else if (textureMode == 1) {
@@ -102,19 +107,18 @@ public:
 						}
 						// Mipmapping
 						else if (textureMode == 2) {
-							glm::vec3 abgRight = barycentric(x + 1, y, screenCoords);
-							glm::vec2 tx = abgRight.x * t[0] + abgRight.y * t[1] + abgRight.z * t[2];
+							glm::vec2 tx = perspectiveInterpolation(glm::vec2{ x + 1, y }, screenCoords, zInv, Qsca);
 							glm::vec2 dx = tx - textureCoords;	// du, dv
-							glm::vec3 abgDown = barycentric(x, y + 1, screenCoords);
-							glm::vec2 ty = abgDown.x * t[0] + abgDown.y * t[1] + abgDown.z * t[2];
+							glm::vec2 ty = perspectiveInterpolation(glm::vec2{ x, y + 1 }, screenCoords, zInv, Qsca);
 							glm::vec2 dy = ty - textureCoords;
 
-							float L = findMax(sqrt(dx.x * dx.x + dx.y * dx.y), sqrt(dy.x * dy.x + dy.y * dy.y));
-							float D = log2(L);
+							float L = findMax(sqrt(pow(dx.x, 2) + pow(dx.y, 2)), sqrt(pow(dy.x, 2) + pow(dy.y, 2)));
+							float D = clamp(log2(L), 0, 10);
 							//std::cout << "D: " << D << std::endl;
-							glm::vec3 c1 = bilinear(textureCoords, tw, texture, floor(D)-1);
-							glm::vec3 c2 = bilinear(textureCoords, tw, texture, ceil(D)-1);
+							glm::vec3 c1 = bilinear(textureCoords, tw, texture, floor(D));
+							glm::vec3 c2 = bilinear(textureCoords, tw, texture, ceil(D));
 							buff = lerp(D - floor(D), c1, c2);
+							//buff = glm::vec3{ 0, D/10, 0};
 						}
 
 						cBuffer[y][x][0] = buff.x;
@@ -133,16 +137,23 @@ public:
 	void setVertColor(glm::vec3* vc, int i) { c[i] = *vc; }
 
 	// Map texture coordinates to [0, 1]
-	float map(float coord) {
-		while (coord < 0) { coord++; }
-		while (coord > 1) { coord--; }
+	float wrap(float coord, int max) {
+		while (coord < 0) { coord += max; }
+		while (coord > max) { coord -= max; }
 		return coord;
+	}
+
+	// Clamp value to a given range
+	float clamp(float val, float lower, float upper) {
+		if (val < lower) { return lower; }
+		else if (val > upper) { return upper; }
+		return val;
 	}
 
 	// Get texture color given screen coordinates
 	glm::vec3 getTexColor(float x, float y, float tw, std::vector<float*> texture, int i) {
 		glm::vec3 ret;
-		int ind = 3 * (floor(x) + floor(y) * tw);
+		int ind = 3 * (x + y * tw);
 		ret.x = texture[i][ind];
 		ret.y = texture[i][ind + 1];
 		ret.z = texture[i][ind + 2];
@@ -177,5 +188,13 @@ public:
 	float findMax(float a, float b) {
 		if (a > b) { return a; }
 		return b;
+	}
+
+	// Perform perspective correct interpolation on a point
+	glm::vec2 perspectiveInterpolation(glm::vec2 point, glm::vec4 screenCoords[3], float zInv[], glm::vec2 Qsca[]) {
+		glm::vec3 abg = barycentric(point.x, point.y, screenCoords);
+		float zInvPoint = abg.x * zInv[0] + abg.y * zInv[1] + abg.z * zInv[2];
+		glm::vec2 QscaPoint = abg.x * Qsca[0] + abg.y * Qsca[1] + abg.z * Qsca[2];
+		return QscaPoint / zInvPoint;
 	}
 };

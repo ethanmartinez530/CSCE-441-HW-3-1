@@ -79,42 +79,47 @@ public:
 
 				// Check inside triangle
 				if ((0 <= alpha && alpha <= 1) && (0 <= beta && beta <= 1) && (alpha + beta <= 1)) {
-					glm::vec3 point = alpha * screenCoords[0] + beta * screenCoords[1] + gamma * screenCoords[2];
-					glm::vec3 pointColor = alpha * c[0] + beta * c[1] + gamma * c[2];
+					float z = (alpha * screenCoords[0] + beta * screenCoords[1] + gamma * screenCoords[2]).z;
 					glm::vec2 textureCoords = perspectiveInterpolation(glm::vec2{ x, y }, screenCoords, zInv, Qsca);
-					//glm::vec2 textureCoords = alpha * t[0] + beta * t[1] + gamma * t[2];
-
-					//textureCoords.x = tw * map(textureCoords.x, 1);
-					//textureCoords.y = th * map(textureCoords.y, 1);
-					textureCoords.x = wrap(textureCoords.x * tw, tw);
-					textureCoords.y = wrap(textureCoords.y * th, th);
+					textureCoords.x *= tw;	//Scaling
+					textureCoords.y *= th;
 
 					// Check depth buffer
-					if ((point.z < zBuffer[y][x]) && (0 <= x && x < w) && (0 <= y && y < h)) {
+					if ((z < zBuffer[y][x]) && (0 <= x && x < w) && (0 <= y && y < h)) {
 						glm::vec3 buff;
 						
 						// Not textured
 						if (!isTextured) {
-							buff = pointColor;
+							buff = alpha * c[0] + beta * c[1] + gamma * c[2];
 						}
 						// Nearest neighbor
 						else if (textureMode == 0) {
+							textureCoords.x = wrap(textureCoords.x, tw);
+							textureCoords.y = wrap(textureCoords.y, th);
 							buff = getTexColor(floor(textureCoords.x), floor(textureCoords.y), tw, texture, 0);
 						}
 						// Bilinear Interpolation
 						else if (textureMode == 1) {
+							textureCoords.x = wrap(textureCoords.x, tw);
+							textureCoords.y = wrap(textureCoords.y, th);
 							buff = bilinear(textureCoords, tw, texture, 0);
 						}
 						// Mipmapping
 						else if (textureMode == 2) {
-							glm::vec2 tx = perspectiveInterpolation(glm::vec2{ x + 1, y }, screenCoords, zInv, Qsca);
-							glm::vec2 dx = tx - textureCoords;	// du, dv
-							glm::vec2 ty = perspectiveInterpolation(glm::vec2{ x, y + 1 }, screenCoords, zInv, Qsca);
-							glm::vec2 dy = ty - textureCoords;
-
-							float L = findMax(sqrt(pow(dx.x, 2) + pow(dx.y, 2)), sqrt(pow(dy.x, 2) + pow(dy.y, 2)));
+							glm::vec2 rightTexCoords = perspectiveInterpolation(glm::vec2{ x + 1, y }, screenCoords, zInv, Qsca);
+							rightTexCoords.x *= tw;	//Scaling
+							rightTexCoords.y *= th;
+							glm::vec2 rightDistance = rightTexCoords - textureCoords;	// du, dv
+							glm::vec2 upTexCoords = perspectiveInterpolation(glm::vec2{ x, y + 1 }, screenCoords, zInv, Qsca);
+							upTexCoords.x *= tw;	//Scaling
+							upTexCoords.y *= th;
+							glm::vec2 upDistance = upTexCoords - textureCoords;
+							float L = findMax(sqrt(pow(rightDistance.x, 2) + pow(rightDistance.y, 2)), sqrt(pow(upDistance.x, 2) + pow(upDistance.y, 2)));
 							float D = clamp(log2(L), 0, 10);
 							//std::cout << "D: " << D << std::endl;
+
+							textureCoords.x = wrap(textureCoords.x, tw);
+							textureCoords.y = wrap(textureCoords.y, th);
 							glm::vec3 c1 = bilinear(textureCoords, tw, texture, floor(D));
 							glm::vec3 c2 = bilinear(textureCoords, tw, texture, ceil(D));
 							buff = lerp(D - floor(D), c1, c2);
@@ -124,7 +129,7 @@ public:
 						cBuffer[y][x][0] = buff.x;
 						cBuffer[y][x][1] = buff.y;
 						cBuffer[y][x][2] = buff.z;
-						zBuffer[y][x] = point.z;
+						zBuffer[y][x] = z;
 					}
 				}
 			}
